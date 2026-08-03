@@ -1,9 +1,17 @@
-import { Column, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  OneToOne,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 import { Role } from '../enums/user-role.enum';
 import { Exclude } from 'class-transformer';
 import { Customer } from 'src/customers/entities/customer.entity';
 import { Seller } from 'src/sellers/entities/seller.entity';
 
+@Entity()
 export class User {
   @PrimaryGeneratedColumn()
   user_id!: number;
@@ -36,12 +44,9 @@ export class User {
   })
   seller!: Seller;
 
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  @CreateDateColumn()
   createdAt!: Date;
 
-  @Column({
-    type: 'timestamp',
-    default: () => 'CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP',
-  })
+  @UpdateDateColumn()
   updatedAt!: Date;
 }
