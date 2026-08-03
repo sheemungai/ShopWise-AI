@@ -1,24 +1,21 @@
 import { User } from 'src/users/entities/user.entity';
-import { Column, JoinColumn, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  JoinColumn,
+  OneToOne,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 
+@Entity()
 export class Customer {
   @PrimaryGeneratedColumn()
   customer_id!: number;
 
   @Column()
-  name!: string;
-
-  @Column()
-  email!: string;
-
-  @Column()
-  password!: string;
-
-  @Column()
   gender!: string;
-
-  @Column()
-  phone!: string;
 
   @Column()
   address!: string;
@@ -30,12 +27,9 @@ export class Customer {
   @JoinColumn()
   user!: User;
 
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  @CreateDateColumn()
   createdAt!: Date;
 
-  @Column({
-    type: 'timestamp',
-    default: () => 'CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP',
-  })
+  @UpdateDateColumn()
   updatedAt!: Date;
 }
