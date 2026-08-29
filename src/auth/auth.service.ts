@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { CreateAuthDto } from './dto/create-auth.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -7,7 +11,7 @@ import { Repository } from 'typeorm';
 import { Role } from 'src/users/enums/user-role.enum';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
-import { userInfo } from 'os';
+import { StringValue } from 'ms';
 
 @Injectable()
 export class AuthService {
@@ -17,18 +21,13 @@ export class AuthService {
     private configService: ConfigService,
   ) {}
 
-  private async getTokens(
-    user_id: number,
-    email: string,
-    password: string,
-    role: Role,
-  ) {
+  private async getTokens(user_id: number, email: string, role: Role) {
     const [at, rt] = await Promise.all([
       this.jwtService.signAsync(
         { sub: user_id, email: email, role: role },
         {
           secret: this.configService.getOrThrow<string>('JWT_ACCESS_SECRET'),
-          expiresIn: this.configService.getOrThrow<string>(
+          expiresIn: this.configService.getOrThrow<StringValue>(
             'JWT_ACCESS_TOKEN_EXPIRES_IN',
           ),
         },
@@ -40,8 +39,8 @@ export class AuthService {
           role: role,
         },
         {
-          secret: this.configService.gerOrThrow<string>('JWT_REFRESH_SECRET'),
-          expiresIn: this.configService.getOrThrow<string>(
+          secret: this.configService.getOrThrow<string>('JWT_REFRESH_SECRET'),
+          expiresIn: this.configService.getOrThrow<StringValue>(
             'JWT_REFRESH_TOKEN_EXPIRES_IN',
           ),
         },
@@ -62,23 +61,21 @@ export class AuthService {
     });
   }
 
-  async signIn(CreateAuthDto: CreateAuthDto) {
+  async signIn(createAuthDto: CreateAuthDto) {
+    const { password } = createAuthDto;
     const foundUser = await this.userRepository.findOne({
-      where: { email: CreateAuthDto.email },
-      select: ['user_id', 'email', 'password', 'role'],
+      where: { email: createAuthDto.email },
+      select: { user_id: true, email: true, password: true, role: true },
     });
     if (!foundUser) {
-      throw NotFoundException(
-        `user with email ${CreateAuthDto.email} not found`,
+      throw new UnauthorizedException(
+        `user with email ${createAuthDto.email} not found`,
       );
     }
-    const foundPassword = await bcrypt.compare(
-      CreateAuthDto.password,
-      foundUser.password,
-    );
-    if (!foundPassword) {
-      throw new NotFoundException(
-        `invalid credentials for user with email ${CreateAuthDto.email}`,
+    const passwordMatches = await bcrypt.compare(password, foundUser.password);
+    if (!passwordMatches) {
+      throw new UnauthorizedException(
+        `invalid credentials for user with email ${createAuthDto.email}`,
       );
     }
     const { accessToken, refreshToken } = await this.getTokens(
@@ -102,28 +99,30 @@ export class AuthService {
   }
 
   async signOut(user_id: number) {
-    const foundUser = await this.userRepository.findOne({
-      where: { user_id: user_id },
-      select: ['user_id', 'email', 'role', 'hashedRefreshToken'],
-    });
-    if (!foundUser) {
-      throw new NotFoundException(`User with id ${user_id} not found`);
-    }
-    await this.userRepository.update(user_id, {
+    const result = await this.userRepository.update(user_id, {
       hashedRefreshToken: null,
     });
-    return { message: ` user with id:${user_id} signed out successfully` };
+    if (result.affected === 0) {
+      throw new NotFoundException(`User with id ${user_id} not found`);
+    }
+    return { message: `user with id: ${user_id} signed out successfully` };
   }
+
   async refreshTokens(user_id: number, refreshToken: string) {
     const foundUser = await this.userRepository.findOne({
       where: { user_id: user_id },
-      select: ['user_id', 'email', 'role', 'hashedRefreshToken'],
+      select: {
+        user_id: true,
+        email: true,
+        role: true,
+        hashedRefreshToken: true,
+      },
     });
     if (!foundUser) {
       throw new NotFoundException(`user with id: ${user_id} not found`);
     }
     if (!foundUser.hashedRefreshToken) {
-      throw new NotFoundException(
+      throw new UnauthorizedException(
         `User with id ${user_id} does not have a refresh token`,
       );
     }
@@ -132,9 +131,7 @@ export class AuthService {
       foundUser.hashedRefreshToken,
     );
     if (!isRefreshTokenValid) {
-      throw new NotFoundException(
-        `Invalid refresh token for user with id ${user_id}`,
-      );
+      throw new UnauthorizedException(`Invalid refresh token`);
     }
     const { accessToken, refreshToken: newRefreshToken } = await this.getTokens(
       foundUser.user_id,
