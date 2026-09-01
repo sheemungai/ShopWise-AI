@@ -8,11 +8,19 @@ import {
   Delete,
   BadRequestException,
   ParseIntPipe,
+  UseGuards,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { AtGuard, RolesGuard } from 'src/auth/guards';
+import { Role } from './enums/user-role.enum';
+import { Roles } from 'src/auth/decorators';
 
+@ApiTags('users')
+@ApiBearerAuth()
+@UseGuards(AtGuard, RolesGuard)
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
@@ -33,6 +41,7 @@ export class UsersController {
     }
   }
 
+  @Roles(Role.admin, Role.seller)
   @Get()
   async findAll() {
     const users = await this.usersService.findAll();
@@ -43,6 +52,7 @@ export class UsersController {
     };
   }
 
+  @Roles(Role.admin, Role.seller)
   @Get(':id')
   async findOne(@Param('id') id: number) {
     const user = await this.usersService.findOne(id);
@@ -55,6 +65,7 @@ export class UsersController {
     };
   }
 
+  @Roles(Role.admin)
   @Patch(':id')
   async update(
     @Param('id', ParseIntPipe) id: number,
@@ -68,6 +79,7 @@ export class UsersController {
     };
   }
 
+  @Roles(Role.admin)
   @Delete(':id')
   async remove(@Param('id', ParseIntPipe) id: number) {
     const user = await this.usersService.delete(id);
