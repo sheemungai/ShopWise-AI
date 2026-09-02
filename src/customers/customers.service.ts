@@ -1,4 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateCustomerDto } from './dto/create-customer.dto';
 import { UpdateCustomerDto } from './dto/update-customer.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -17,10 +22,10 @@ export class CustomersService {
   async create(createCustomerDto: CreateCustomerDto) {
     const user = await this.UserService.findOne(createCustomerDto.user_id);
     if (!user) {
-      throw new Error('User not found');
+      throw new NotFoundException('User not found');
     }
     if (user.role !== Role.customer) {
-      throw new Error('User is not a customer');
+      throw new BadRequestException('User is not a customer');
     }
     const customer = this.customerRepository.create({
       ...createCustomerDto,
@@ -46,18 +51,46 @@ export class CustomersService {
     });
   }
 
-  async update(id: number, updateCustomerDto: UpdateCustomerDto) {
+  async update(
+    id: number,
+    updateCustomerDto: UpdateCustomerDto,
+    requestingUser: { sub: number; role: Role },
+  ) {
     const customer = await this.customerRepository.findOne({
       where: { customer_id: id },
+      relations: { user: true },
     });
 
     if (!customer) {
-      return 'Customer not found';
+      throw new NotFoundException(`Customer with id ${id} not found`);
     }
-    return this.customerRepository.update(id, updateCustomerDto);
+
+    const isOwner = customer.user.user_id === requestingUser.sub;
+    const isAdmin = requestingUser.role === Role.admin;
+
+    if (!isOwner && !isAdmin) {
+      throw new ForbiddenException('You can only update your profile');
+    }
+    await this.customerRepository.update(id, updateCustomerDto);
+    return this.findOne(id);
   }
 
-  remove(id: number) {
+  async remove(id: number, requestingUser: { sub: number; role: Role }) {
+    const customer = await this.customerRepository.findOne({
+      where: { customer_id: id },
+      relations: { user: true },
+    });
+
+    if (!customer) {
+      throw new NotFoundException(`Customer with id ${id} not found`);
+    }
+
+    const isOwner = customer.user.user_id === requestingUser.sub;
+    const isAdmin = requestingUser.role === Role.admin;
+
+    if (!isOwner && !isAdmin) {
+      throw new ForbiddenException('You can only delete your profile');
+    }
     return this.customerRepository.delete(id);
   }
 }

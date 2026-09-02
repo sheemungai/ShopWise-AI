@@ -29,6 +29,8 @@ async function bootstrap() {
       .addBearerAuth()
       .addTag('shopwise')
       .addTag('users, users management endpoint')
+      .addTag('sellers,sellers management endpoint')
+      .addTag('customers, customers management endpoint')
       .addServer('http://localhost:8000/', 'Local development server')
       .build();
 

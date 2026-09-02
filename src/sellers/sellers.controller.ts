@@ -7,19 +7,22 @@ import {
   Param,
   Delete,
   UseGuards,
+  Req,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { SellersService } from './sellers.service';
 import { CreateSellerDto } from './dto/create-seller.dto';
 import { UpdateSellerDto } from './dto/update-seller.dto';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { AtGuard } from 'src/auth/guards';
-import { AtStrategy } from 'src/auth/strategies';
 import { Roles } from 'src/auth/decorators';
 import { Role } from 'src/users/enums/user-role.enum';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import type { RequestWithUser } from 'src/types/request-with-user';
 
 @ApiTags('sellers')
 @ApiBearerAuth()
-@UseGuards(AtGuard, AtStrategy)
+@UseGuards(AtGuard, RolesGuard)
 @Controller('sellers')
 export class SellersController {
   constructor(private readonly sellersService: SellersService) {}
@@ -38,19 +41,23 @@ export class SellersController {
 
   @Roles(Role.admin, Role.seller)
   @Get(':id')
-  findOne(@Param('id') id: string) {
+  findOne(@Param('id', ParseIntPipe) id: number) {
     return this.sellersService.findOne(+id);
   }
 
   @Roles(Role.admin, Role.seller)
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateSellerDto: UpdateSellerDto) {
-    return this.sellersService.update(+id, updateSellerDto);
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateSellerDto: UpdateSellerDto,
+    @Req() req: RequestWithUser,
+  ) {
+    return this.sellersService.update(id, updateSellerDto, req.user);
   }
 
   @Roles(Role.admin, Role.seller)
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.sellersService.remove(+id);
+  remove(@Param('id', ParseIntPipe) id: number, @Req() req: RequestWithUser) {
+    return this.sellersService.remove(id, req.user);
   }
 }
