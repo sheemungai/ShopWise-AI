@@ -32,6 +32,10 @@ export class User {
   @Column()
   phone!: string;
 
+  @Exclude()
+  @Column({ type: 'text', nullable: true, default: null })
+  hashedRefreshToken!: string | null;
+
   @OneToOne(() => Customer, (customer) => customer.user, {
     onDelete: 'CASCADE',
     onUpdate: 'CASCADE',

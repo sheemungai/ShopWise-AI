@@ -1,4 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateSellerDto } from './dto/create-seller.dto';
 import { UpdateSellerDto } from './dto/update-seller.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -19,11 +24,11 @@ export class SellersService {
   async create(createSellerDto: CreateSellerDto) {
     const user = await this.UserService.findOne(createSellerDto.user_id);
     if (!user) {
-      throw new Error('Seller not found');
+      throw new NotFoundException('Seller not found');
     }
 
     if (user.role !== Role.seller) {
-      throw new Error('User is not a seller');
+      throw new BadRequestException('Seller is not a seller');
     }
     const seller = this.sellerRepository.create({
       ...createSellerDto,
@@ -49,18 +54,51 @@ export class SellersService {
     });
   }
 
-  async update(id: number, updateSellerDto: UpdateSellerDto) {
+  async update(
+    id: number,
+    updateSellerDto: UpdateSellerDto,
+    requestingUser: { sub: number; role: Role },
+  ) {
     const seller = await this.sellerRepository.findOne({
       where: { seller_id: id },
+      relations: { user: true },
     });
 
     if (!seller) {
-      return 'Seller not found';
+      throw new NotFoundException(` Selle with id ${id} not found`);
     }
-    return this.sellerRepository.update(id, updateSellerDto);
+    const isOwner = seller.user.user_id === requestingUser.sub;
+    const isAdmin = requestingUser.role === Role.admin;
+
+    if (!isOwner && !isAdmin) {
+      throw new ForbiddenException(
+        'You can only update your own seller profile',
+      );
+    }
+
+    await this.sellerRepository.update(id, updateSellerDto);
+    return this.findOne(id);
   }
 
-  remove(id: number) {
+  async remove(id: number, requestingUser: { sub: number; role: Role }) {
+    const seller = await this.sellerRepository.findOne({
+      where: { seller_id: id },
+      relations: { user: true },
+    });
+
+    if (!seller) {
+      throw new NotFoundException(`Seller with id ${id} not found`);
+    }
+
+    const isOwner = seller.user.user_id === requestingUser.sub;
+    const isAdmin = requestingUser.role === Role.admin;
+
+    if (!isOwner && !isAdmin) {
+      throw new ForbiddenException(
+        'You can only delete your own seller profile',
+      );
+    }
+
     return this.sellerRepository.delete(id);
   }
 }
