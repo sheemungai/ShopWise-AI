@@ -5,6 +5,7 @@ import { DatabaseModule } from 'src/database/database.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtModule } from '@nestjs/jwt';
 import { User } from 'src/users/entities/user.entity';
+import { AtStrategy, RtStrategy } from './strategies';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { User } from 'src/users/entities/user.entity';
     JwtModule.register({ global: true }),
   ],
   controllers: [AuthController],
-  providers: [AuthService],
+  providers: [AuthService, AtStrategy, RtStrategy],
+  exports: [AtStrategy, RtStrategy],
 })
 export class AuthModule {}

@@ -1,4 +1,5 @@
 import {
+  ConflictException,
   ForbiddenException,
   Injectable,
   NotFoundException,
@@ -9,6 +10,7 @@ import { User } from './entities/user.entity';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { plainToInstance } from 'class-transformer';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsersService {
@@ -16,56 +18,41 @@ export class UsersService {
     @InjectRepository(User) private readonly userRepository: Repository<User>,
   ) {}
 
+  private async hashData(data: string): Promise<string> {
+    const salt = await bcrypt.genSalt(10);
+    return bcrypt.hash(data, salt);
+  }
+
   async create(createUserDto: CreateUserDto): Promise<Partial<User>> {
     const existingUser = await this.userRepository.findOne({
       where: { email: createUserDto.email },
-      select: {
-        user_id: true,
-      },
+      select: { user_id: true },
     });
     if (existingUser) {
-      throw new Error(`User with email ${createUserDto.email} already exists`);
+      throw new ConflictException(
+        `User with email ${createUserDto.email} already exists`,
+      );
     }
 
-    // const newUser = Partial<User> = {
-    //   name: createUserDto.name,
-    //   email: createUserDto.email,
-    //   password: createUserDto.password,
-    //   role: createUserDto.role,
-    //   phone: createUserDto.phone,
-    // };
-    // if (createUserDto.role) {
-    //   newUser.role = createUserDto.role;
-    // }
-    // const savedUser = await this.userRepository.save(newUser);
-    // return savedUser;
-    return this.userRepository.save(createUserDto);
+    const hashedPassword = await this.hashData(createUserDto.password);
+    const newUser = this.userRepository.create({
+      ...createUserDto,
+      password: hashedPassword,
+    });
+    return this.userRepository.save(newUser);
   }
 
   async findAll(email?: string) {
-    let users: User[];
-    if (email) {
-      users = await this.userRepository.find({
-        where: { email },
-        select: {
-          user_id: true,
-          name: true,
-          email: true,
-          role: true,
-          phone: true,
-        },
-      });
-    } else {
-      users = await this.userRepository.find({
-        select: {
-          user_id: true,
-          name: true,
-          email: true,
-          role: true,
-          phone: true,
-        },
-      });
-    }
+    const users = await this.userRepository.find({
+      where: email ? { email } : {},
+      select: {
+        user_id: true,
+        name: true,
+        email: true,
+        role: true,
+        phone: true,
+      },
+    });
     return users.map((user) => plainToInstance(User, user));
   }
 
@@ -81,7 +68,7 @@ export class UsersService {
       },
     });
     if (!user) {
-      throw new Error(`user with id ${id} not found`);
+      throw new NotFoundException(`User with id ${id} not found`);
     }
     return plainToInstance(User, user);
   }
@@ -92,27 +79,26 @@ export class UsersService {
         'You are not authorized to update this user',
       );
     }
-    const user = await this.userRepository.findOne({ where: { user_id: id } });
 
+    const user = await this.userRepository.findOne({ where: { user_id: id } });
     if (!user) {
       throw new NotFoundException(`User with id ${id} not found`);
     }
-    {
-      return this.userRepository.update(id, updateUserDto);
+
+    const updatePayload = { ...updateUserDto };
+    if (updatePayload.password) {
+      updatePayload.password = await this.hashData(updatePayload.password);
     }
+
+    await this.userRepository.update(id, updatePayload);
+    return this.findOne(id);
   }
 
   async delete(id: number) {
-    return await this.userRepository
-      .delete(id)
-      .then((result) => {
-        if (result.affected === 0) {
-          return `user with id ${id} not found`;
-        }
-      })
-      .catch((error) => {
-        console.error('Error deleting user:', error);
-        throw new Error(`Failed to delete user with id ${id}`);
-      });
+    const result = await this.userRepository.delete(id);
+    if (result.affected === 0) {
+      throw new NotFoundException(`User with id ${id} not found`);
+    }
+    return { message: `User with id ${id} deleted successfully` };
   }
 }

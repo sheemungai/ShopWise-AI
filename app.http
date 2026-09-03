@@ -1,1 +1,28 @@
 @url = http://localhost:8000/api/v1
+
+
+@admin_token=
+@seller_token=
+@customer_token=
+
+### Admin login
+POST {{url}}/auth/login
+Content-Type: application/json
+
+{
+    "email": "sheilla@gmail.com",
+    "password": "Pass123"
+}
+
+### Create admin user
+POST {{url}}/users
+Content-Type: application/json
+Authorization: Bearer {{admin_token}}
+
+{
+  "name": "Sheilla Mungai",
+  "email": "sheilla@gmail.com",
+  "password": "Pass123",
+  "role": "admin",
+  "phone": "0710101010",
+}
