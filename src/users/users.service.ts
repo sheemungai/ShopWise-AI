@@ -11,6 +11,7 @@ import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { plainToInstance } from 'class-transformer';
 import * as bcrypt from 'bcrypt';
+import { Role } from './enums/user-role.enum';
 
 @Injectable()
 export class UsersService {
@@ -28,6 +29,7 @@ export class UsersService {
       where: { email: createUserDto.email },
       select: { user_id: true },
     });
+
     if (existingUser) {
       throw new ConflictException(
         `User with email ${createUserDto.email} already exists`,
@@ -38,6 +40,7 @@ export class UsersService {
     const newUser = this.userRepository.create({
       ...createUserDto,
       password: hashedPassword,
+      role: Role.customer,
     });
     return this.userRepository.save(newUser);
   }
@@ -85,12 +88,24 @@ export class UsersService {
       throw new NotFoundException(`User with id ${id} not found`);
     }
 
-    const updatePayload = { ...updateUserDto };
+    const updatePayload: Partial<User> & { password?: string } = {
+      ...updateUserDto,
+    };
+
     if (updatePayload.password) {
       updatePayload.password = await this.hashData(updatePayload.password);
     }
 
     await this.userRepository.update(id, updatePayload);
+    return this.findOne(id);
+  }
+
+  async updateRole(id: number, role: Role) {
+    const user = await this.userRepository.findOne({ where: { user_id: id } });
+    if (!user) {
+      throw new NotFoundException(`User with id ${id} not found`);
+    }
+    await this.userRepository.update(id, { role });
     return this.findOne(id);
   }
 

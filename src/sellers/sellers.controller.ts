@@ -19,6 +19,7 @@ import { Roles } from 'src/auth/decorators';
 import { Role } from 'src/users/enums/user-role.enum';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import type { RequestWithUser } from 'src/types/request-with-user';
+import { ApplySellerDto } from './dto/apply-seller.dto';
 
 @ApiTags('sellers')
 @ApiBearerAuth()
@@ -31,6 +32,15 @@ export class SellersController {
   @Post()
   create(@Body() createSellerDto: CreateSellerDto) {
     return this.sellersService.create(createSellerDto);
+  }
+
+  @UseGuards(AtGuard)
+  @Post('apply')
+  applyToBecomeSeller(
+    @Body() applySellerDto: ApplySellerDto,
+    @Req() req: RequestWithUser,
+  ) {
+    return this.sellersService.applyToBeSeller(req.user.sub, applySellerDto);
   }
 
   @Roles(Role.admin, Role.seller)

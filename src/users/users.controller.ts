@@ -16,7 +16,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { AtGuard, RolesGuard } from 'src/auth/guards';
 import { Role } from './enums/user-role.enum';
-import { Roles } from 'src/auth/decorators';
+import { Public, Roles } from 'src/auth/decorators';
 
 @ApiTags('users')
 @ApiBearerAuth()
@@ -25,6 +25,7 @@ import { Roles } from 'src/auth/decorators';
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
+  @Public()
   @Post()
   async create(@Body() createUserDto: CreateUserDto) {
     try {
@@ -77,6 +78,15 @@ export class UsersController {
       data: updateUser,
       message: 'User updated successfully',
     };
+  }
+
+  @Roles(Role.admin)
+  @Patch(':id/role')
+  updateRole(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: { role: Role },
+  ) {
+    return this.usersService.updateRole(id, body.role);
   }
 
   @Roles(Role.admin)
