@@ -10,15 +10,15 @@ import type { Request } from 'express';
 
 type JWTPayLoad = {
   sub: number;
-  emai: string;
+  email: string;
 };
 
 @Injectable()
 export class RtStrategy extends PassportStrategy(Strategy, 'jwt-rt') {
-  constructor(private readonly ConfigService: ConfigService) {
+  constructor(private readonly configService: ConfigService) {
     const options: StrategyOptionsWithRequest = {
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-      secretOrKey: ConfigService.getOrThrow<string>('JWT_REFRESH_secret'),
+      secretOrKey: configService.getOrThrow<string>('JWT_REFRESH_SECRET'),
       passReqToCallback: true,
     };
     super(options);
