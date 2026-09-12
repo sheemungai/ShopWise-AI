@@ -1,10 +1,9 @@
 @url = http://localhost:8000/api/v1
 
 
-@admin_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEsImVtYWlsIjoic2hlaWxsYUBnbWFpbC5jb20iLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODg5NjU5MjksImV4cCI6MTc4ODk2NjgyOX0.Ly12wv4aTwwdlDzbD6BAjY_Cf-8LEs8NqdsmUJIhsq0
+@admin_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEsImVtYWlsIjoic2hlaWxsYUBnbWFpbC5jb20iLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODkxMjM3NzUsImV4cCI6MTc4OTEyNDY3NX0.uNATiHnF-FNJuGBKOOmbycZkIgSexAtgZGD6JcIA9m4
 @seller_token=
-@customer_token=
-
+@customer_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjQsImVtYWlsIjoicGVubnlAZ21haWwuY29tIiwicm9sZSI6ImN1c3RvbWVyIiwiaWF0IjoxNzg5MTIzMzA0LCJleHAiOjE3ODkxMjQyMDR9.GExGFxgX7w6W90LkK36DQxKnEAYEWhGBElrY-zCXr0g
 ### Admin login
 POST {{url}}/auth/login
 Content-Type: application/json
@@ -25,4 +24,128 @@ Authorization: Bearer {{admin_token}}
   "password": "Pass123",
   "role": "admin",
   "phone": "0710101010"
+}
+
+### Create a customer user
+POST {{url}}/users
+Content-Type: application/json
+Authorization: Bearer {{admin_token}}
+
+{
+  "name": "Jane Customer",
+  "email": "jane@gmail.com",
+  "password": "Jane123",
+  "role": "customer",
+  "phone": "0712345678"
+}
+
+### Customer login
+POST {{url}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "jane@gmail.com",
+  "password": "Jane123"
+}
+
+### Create customer profile for an existing customer user
+POST {{url}}/customers
+Content-Type: application/json
+Authorization: Bearer {{admin_token}}
+
+{
+  "user_id": 2,
+  "name": "Jane Customer",
+  "email": "jane@gmail.com",
+  "password": "Jane123",
+  "gender": "female",
+  "phone": "0712345678",
+  "address": "Kilimani, Nairobi"
+}
+
+### Apply to become a seller (authenticated customer)
+POST {{url}}/sellers/apply
+Content-Type: application/json
+Authorization: Bearer {{customer_token}}
+
+{
+  "gender": "female",
+  "address": "Kilimani, Nairobi"
+}
+
+### Apply to become a seller (unauthenticated customer)
+POST {{url}}/sellers/apply
+Content-Type: application/json
+Authorization: Bearer {{customer_token}}
+
+{
+  "gender": "female",
+  "address": "Westlands, Nairobi"
+}
+
+### Create a seller user (admin can create a seller account)
+POST {{url}}/users
+Content-Type: application/json
+Authorization: Bearer {{admin_token}}
+
+{
+  "name": "Amina Seller",
+  "email": "amina.seller@gmail.com",
+  "password": "Amina123",
+  "role": "seller",
+  "phone": "0700112233"
+}
+
+
+### Seller login
+POST {{url}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "amina.seller@gmail.com",
+  "password": "Amina123"
+}
+
+### Get all customers
+GET {{url}}/users
+Authorization: Bearer {{admin_token}}
+
+### Get one customer
+GET {{url}}/customers/1
+Authorization: Bearer {{admin_token}}
+
+
+### 1) Create a customer user
+POST {{url}}/users
+Content-Type: application/json
+Authorization: Bearer {{admin_token}}
+
+{
+  "name": "Penny Customer",
+  "email": "penny@gmail.com",
+  "password": "Penny123",
+  "role": "customer",
+  "phone": "0712345678"
+}
+
+
+### customer login
+POST {{url}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "penny@gmail.com",
+  "password": "Penny123"
+}
+
+### 2) Create customer profile
+POST {{url}}/customers
+Content-Type: application/json
+Authorization: Bearer {{admin_token}}
+
+{
+  "user_id": 4,
+  "name": "Penny Customer",
+  "gender": "female",
+  "address": "Roysambu, Nairobi"
 }
