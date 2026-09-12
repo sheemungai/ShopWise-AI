@@ -8,6 +8,7 @@ import { AuthModule } from './auth/auth.module';
 import { AtGuard } from './auth/guards';
 import { LoggerMiddleware } from './logger.middleware';
 import { CategoriesModule } from './categories/categories.module';
+import { ProductsModule } from './products/products.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { CategoriesModule } from './categories/categories.module';
     SellersModule,
     AuthModule,
     CategoriesModule,
+    ProductsModule,
   ],
   controllers: [],
   providers: [{ provide: 'APP_GUARD', useClass: AtGuard }],
