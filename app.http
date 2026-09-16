@@ -1,8 +1,8 @@
 @url = http://localhost:8000/api/v1
 
 
-@admin_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEsImVtYWlsIjoic2hlaWxsYUBnbWFpbC5jb20iLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODkxMjM3NzUsImV4cCI6MTc4OTEyNDY3NX0.uNATiHnF-FNJuGBKOOmbycZkIgSexAtgZGD6JcIA9m4
-@seller_token=
+@admin_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEsImVtYWlsIjoic2hlaWxsYUBnbWFpbC5jb20iLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODk1NzYyNzQsImV4cCI6MTc4OTU3NzE3NH0.WA-DiCvYcPzFzvvsoBmyw1xxxbA-aw1CWDDgWKykeJE
+@seller_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjMsImVtYWlsIjoiYW1pbmEuc2VsbGVyQGdtYWlsLmNvbSIsInJvbGUiOiJzZWxsZXIiLCJpYXQiOjE3ODk1NzU4NjUsImV4cCI6MTc4OTU3Njc2NX0.SsQkbKGjgY1RNoQOC2OjZbTrxZb84vc7uPfd6oEMdQI
 @customer_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjQsImVtYWlsIjoicGVubnlAZ21haWwuY29tIiwicm9sZSI6ImN1c3RvbWVyIiwiaWF0IjoxNzg5MTIzMzA0LCJleHAiOjE3ODkxMjQyMDR9.GExGFxgX7w6W90LkK36DQxKnEAYEWhGBElrY-zCXr0g
 ### Admin login
 POST {{url}}/auth/login
@@ -107,7 +107,7 @@ Content-Type: application/json
 }
 
 ### Get all customers
-GET {{url}}/users
+GET {{url}}/sellers
 Authorization: Bearer {{admin_token}}
 
 ### Get one customer
@@ -149,3 +149,75 @@ Authorization: Bearer {{admin_token}}
   "gender": "female",
   "address": "Roysambu, Nairobi"
 }
+
+### Create root category (admin)
+POST {{url}}/categories
+Authorization: Bearer {{admin_token}}
+Content-Type: application/json
+
+{
+  "category_name": "Clothing",
+  "description": "All clothing items",
+  "parent_id": 0
+}
+
+### Create sub-category (admin) — parent_id = id returned for Clothing (e.g. 1)
+POST {{url}}/categories
+Authorization: Bearer {{admin_token}}
+Content-Type: application/json
+
+{
+  "category_name": "Dresses",
+  "description": "Women's dresses",
+  "parent_id": 1
+}
+
+# ### Create a seller (admin) — set user_id to an existing user id
+# POST {{url}}/sellers
+# Authorization: Bearer {{admin_token}}
+# Content-Type: application/json
+
+# {
+#   "name": "Acme Boutique",
+#   "email": "seller@example.com",
+#   "password": "sellerpass",
+#   "phone": "+1234567890",
+#   "gender": "other",
+#   "address": "123 Market St",
+#   "user_id": 1
+# }
+
+### Create a product (seller or admin) — use category id(s) from above (e.g. 2)
+POST {{url}}/products
+Authorization: Bearer {{seller_token}}
+Content-Type: application/json
+
+{
+  "name": "Summer Floral Dress",
+  "description": "Lightweight summer dress with floral print",
+  "price": 500,
+  "images": ["uploads/dresses/red floral dress.jpg"
+  , "uploads/dresses/white floral dress.jpg"],
+  "category_ids": [2],
+  "variants": [
+    { "size": "S", "color": "Red", "stock": 10 },
+    { "size": "M", "color": "White", "stock": 5 }
+  ]
+}
+
+### Add another variant to product id 1 (admin or seller)
+POST http://localhost:3000/products/1/variants
+Authorization: Bearer {{seller_token}}
+Content-Type: application/json
+
+{
+  "size": "L",
+  "color": "Green",
+  "stock": 7
+}
+
+### Public: list categories (no token needed)
+GET {{url}}/categories
+
+### Public: list products (no token needed)
+GET {{url}}/products

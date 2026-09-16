@@ -1,9 +1,11 @@
+import { Product } from 'src/products/entities/product.entity';
 import { User } from 'src/users/entities/user.entity';
 import {
   Column,
   CreateDateColumn,
   Entity,
   JoinColumn,
+  OneToMany,
   OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
@@ -26,6 +28,9 @@ export class Seller {
   })
   @JoinColumn()
   user!: User;
+
+  @OneToMany(() => Product, (product) => product.seller)
+  products!: Product[];
 
   @CreateDateColumn()
   createdAt!: Date;
