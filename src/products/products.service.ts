@@ -64,7 +64,18 @@ export class ProductsService {
       );
       await manager.save(variantEntities);
 
-      return this.findOne(savedProduct.product_id);
+      const createdProduct = await manager.findOne(Product, {
+        where: { product_id: savedProduct.product_id },
+        relations: { seller: true, categories: true, variants: true },
+      });
+
+      if (!createdProduct) {
+        throw new NotFoundException(
+          `Product with id ${savedProduct.product_id} not found`,
+        );
+      }
+
+      return createdProduct;
     });
   }
 
