@@ -10,6 +10,7 @@ import { LoggerMiddleware } from './logger.middleware';
 import { CategoriesModule } from './categories/categories.module';
 import { ProductsModule } from './products/products.module';
 import { CartsModule } from './carts/carts.module';
+import { OrdersModule } from './orders/orders.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { CartsModule } from './carts/carts.module';
     CategoriesModule,
     ProductsModule,
     CartsModule,
+    OrdersModule,
   ],
   controllers: [],
   providers: [{ provide: 'APP_GUARD', useClass: AtGuard }],
