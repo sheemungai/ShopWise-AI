@@ -8,6 +8,7 @@ import { Cart } from 'src/carts/entities/cart.entity';
 import { CartItem } from 'src/carts/entities/cart-item.entity';
 import { Customer } from 'src/customers/entities/customer.entity';
 import { ProductVariant } from 'src/products/entities/product-variant.entity';
+import { User } from 'src/users/entities/user.entity';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { ProductVariant } from 'src/products/entities/product-variant.entity';
       CartItem,
       Customer,
       ProductVariant,
+      User,
     ]),
   ],
   controllers: [OrdersController],
