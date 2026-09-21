@@ -161,6 +161,17 @@ Content-Type: application/json
   "parent_id": 0
 }
 
+### Example: create another root category (admin)
+POST {{url}}/categories
+Authorization: Bearer {{admin_token}}
+Content-Type: application/json
+
+{
+  "category_name": "Accessories",
+  "description": "belts, hats, and other fashion accessories",
+  "parent_id": 2
+}
+
 ### Create sub-category (admin) — parent_id = id returned for Clothing (e.g. 1)
 POST {{url}}/categories
 Authorization: Bearer {{admin_token}}
